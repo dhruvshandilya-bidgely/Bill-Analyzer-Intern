@@ -80,7 +80,6 @@ def load_json_data(uuid=None):
             metadata = fetch_location(uuid)
             vacation_data = fetch_vacation_data(uuid)
             processed_data = preprocess(itemization_data, metadata, vacation_data, True)
-            print("Anand",str(processed_data))
             return processed_data
         except Exception as e:
             st.error(f"Error in preprocessing data: {e}")
@@ -249,8 +248,6 @@ def run_bill_analyzer(flag=False):
         uuid = st.text_input("Enter the UUID to fetch the data:")
         if uuid:
             processed_data = load_json_data(uuid)
-            print('uuid : ',uuid)
-            print("processed_data : ",processed_data)
         else:
             st.info("Please enter a UUID to fetch data.")
             return
