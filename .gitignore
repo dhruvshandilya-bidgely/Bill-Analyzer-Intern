@@ -2,3 +2,4 @@ access_token_gen.py
 tools/__pycache__
 __pycache__
 .env
+.vscode
