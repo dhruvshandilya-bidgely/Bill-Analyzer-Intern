@@ -16,6 +16,105 @@ user_avatar_url = 'https://m.media-amazon.com/images/I/31x+q3aNVKL._AC_UF1000,10
 assistant_avatar_user = 'https://cdn.theorg.com/8ad2e869-5595-4b23-bbff-6a7a8d511d15_thumb.jpg'
 favicon_url = 'https://cdn.theorg.com/8ad2e869-5595-4b23-bbff-6a7a8d511d15_thumb.jpg'
 
+env_properties_dict = {
+    'dev': dict({
+        'protocol': 'https://',
+        'primary': 'devapi.bidgely.com',
+        'secondary': 'devapi.bidgely.com',
+        'aws_region': 'us-west-2'
+    }),
+
+    'ds': dict({
+        'protocol': 'http://',
+        'primary': 'dspyapi.bidgely.com',
+        'secondary': 'dsapi.bidgely.com',
+        'aws_region': 'us-east-1'
+    }),
+
+    'nonprodqa': dict({
+        'protocol': 'https://',
+        'primary': 'nonprodqaapi.bidgely.com',
+        'secondary': 'nonprodqaapi.bidgely.com',
+        'aws_region': 'us-west-2'
+    }),
+    'prod-na': dict({
+        'protocol': 'https://',
+        'primary': 'napyapi.bidgely.com',
+        'secondary': 'naapi.bidgely.com',
+        'aws_region': 'us-east-1'
+    }),
+    'prod-eu': dict({
+        'protocol': 'https://',
+        'primary': 'eupyapi.bidgely.com',
+        'secondary': 'euapi.bidgely.com',
+        'aws_region': 'eu-central-1'
+    }),
+    'prod-jp': dict({
+        'protocol': 'https://',
+        'primary': 'jppyapi.bidgely.com',
+        'secondary': 'jpapi.bidgely.com',
+        'aws_region': 'ap-northeast-1'
+    }),
+    'prod-ca': dict({
+        'protocol': 'https://',
+        'primary': 'capyapi.bidgely.com',
+        'secondary': 'caapi.bidgely.com',
+        'aws_region': 'ca-central-1'
+    }),
+    'prod-na-2': dict({
+        'protocol': 'https://',
+        'primary': 'na2pyapi.bidgely.com',
+        'secondary': 'naapi2.bidgely.com',
+        'aws_region': 'us-east-1'
+    }),
+    'preprod-na': dict({
+        'protocol': 'https://',
+        'primary': 'napreprodapi.bidgely.com',
+        'secondary': 'napreprodapi.bidgely.com',
+        'aws_region': 'us-east-1'
+    }),
+    'qaperfenv': dict({
+        'protocol': 'http://',
+        'primary': 'awseb-e-i-awsebloa-1jk42nlshi8yb-2130246765.us-west-2.elb.amazonaws.com',
+        'secondary': 'awseb-e-i-awsebloa-1jk42nlshi8yb-2130246765.us-west-2.elb.amazonaws.com',
+        'aws_region': 'us-west-2'
+    }),
+    'uat': dict({
+        'protocol': 'https://',
+        'primary': 'uatapi.bidgely.com',
+        'secondary': 'uatapi.bidgely.com',
+        'aws_region': 'us-west-2'
+    }),
+
+    'productqa': dict({
+        'protocol': 'https://',
+        'primary': 'productqaapi.bidgely.com',
+        'secondary': 'productqaapi.bidgely.com',
+        'aws_region': 'us-west-2'
+    }),
+
+    'dewa-dev': dict({
+        'protocol': 'http://',
+        'primary': 'api.mslpdev.dewaaws.local',
+        'secondary': 'api.mslpdev.dewaaws.local',
+        'aws_region': 'me-central-1'
+    }),
+
+    'dewa-qa': dict({
+        'protocol': 'http://',
+        'primary': 'api.mslpqa.dewaaws.local',
+        'secondary': 'api.mslpqa.dewaaws.local',
+        'aws_region': 'me-central-1'
+    }),
+
+    'dewa-prod': dict({
+        'protocol': 'http://',
+        'primary': 'api-pyami.mslpprod.dewaaws.local',
+        'secondary': 'api-pyami.mslpprod.dewaaws.local',
+        'aws_region': 'me-central-1'
+    }),
+}
+
 # Set the page configuration with the custom icon URL
 st.set_page_config(page_title="Bill Analyzer", page_icon=favicon_url, layout="centered", initial_sidebar_state="auto", menu_items=None)
 html_content = """
@@ -69,16 +168,17 @@ initialize_session_state()
 def disable_file_uploader():
     st.session_state["file_uploader_disabled"] = True
 
-def load_json_data(uuid=None):
+def load_json_data(env_name, access_token, uuid=None):
     """
     Load JSON data either from files or using a UUID to fetch the user data.
     Returns the processed JSON data.
     """
-    if uuid:
+    if env_name and access_token and uuid:
+        env_url = env_properties_dict[env_name]['protocol']+env_properties_dict[env_name]['primary']
         try:
-            itemization_data = fetch_itemization_data(uuid)
-            metadata = fetch_location(uuid)
-            vacation_data = fetch_vacation_data(uuid)
+            itemization_data = fetch_itemization_data(uuid, env_url, access_token)
+            metadata = fetch_location(uuid, env_url, access_token)
+            vacation_data = fetch_vacation_data(uuid, env_url, access_token)
             processed_data = preprocess(itemization_data, metadata, vacation_data, True)
             return processed_data
         except Exception as e:
@@ -244,112 +344,117 @@ def run_bill_analyzer(flag=False):
     session_id = "abc2"
     store = {}
 
-    if flag:
-        uuid = st.text_input("Enter the UUID to fetch the data:")
-        if uuid:
-            processed_data = load_json_data(uuid)
-        else:
-            st.info("Please enter a UUID to fetch data.")
-            return
-    else:
-        processed_data = load_json_data()
+    env = st.selectbox('Select the env.',('dev', 'ds', 'nonprodqa', 'prod-na', 'prod-eu', 'prod-jp', 'prod-ca', 'prod-na-2', 'preprod-na', 'qaperfenv', 'uat', 'productqa', 'dewa-dev', 'dewa-qa', 'dewa-prod'))
 
-    if processed_data is None:
-        return
+    access_token = st.text_input("Enter the access token for the env.")
 
-    json_file = processed_data.get("usageChartDataList", [])
-    json_file = json_file[-15:-2] #Fetching last 13 BCs excluding the 2 recent ones
-    loc = processed_data["location"]
-
-    st.markdown("<h3 style='text-align: center;'>Billing Cycles Summary</h1>", unsafe_allow_html=True)
-    table = display_billing_cycles(json_file)
-    st.text(table)
-
-    cycle1, cycle2, idx1, idx2, show_plot = select_billing_cycles(json_file)
-    if not cycle1 or not cycle2 or show_plot is None:
-        return
-
-    if show_plot == 'yes':
-        image_buffer = plot_itemization_comparison(json_file[idx1], json_file[idx2])
-        image = Image.open(image_buffer)
-        st.image(image, caption='\n\n', use_column_width=True)
-
-    diff = replace_braces(calculate_difference(json_file[idx1], json_file[idx2]))
-    st.write('\nBill Analyzer is running! Please Wait...\n')
-
-    st.session_state['session_id'] = session_id
-    st.session_state['cycle1'] = cycle1
-    st.session_state['cycle2'] = cycle2
-    st.session_state['diff'] = diff
-    if 'store' not in st.session_state:
-        st.session_state['store'] = {}
-    store = st.session_state['store']
-
-    def get_session_history(session_id: str):
-        if session_id not in store:
-            store[session_id] = InMemoryChatMessageHistory()
-        return store[session_id]
-
-    llm = ChatOpenAI(model="gpt-4o", openai_api_key=key, temperature=1.0)  #Using gpt-4o as a base model
-    first_chain = first_prompt | llm
-    second_chain = second_prompt | llm
-
-    first_with_history = RunnableWithMessageHistory(first_chain, get_session_history)
-    second_with_history = RunnableWithMessageHistory(second_chain, get_session_history)
-
-    def chatbot_response(session_id: str, user_input: str):
-        history = get_session_history(session_id)
-        if not history.messages:
-            response = first_with_history.invoke(
-                {"input": user_input},
-                config={"configurable": {"session_id": session_id}}
-            )
-        else:
-            response = second_with_history.invoke(
-                {"input": user_input},
-                config={"configurable": {"session_id": session_id}}
-            )
-        return response.content
-
-    def interactive_chatbot(session_id: str, cycle1, cycle2, diff):
-        if "messages" not in st.session_state:
-            st.session_state.messages = []
-
-        initial_response = None
-
-        if not st.session_state.messages:
-            first_query = f"Compare the following billing cycles: one= {cycle1} and two= {cycle2}. The difference in values between the billing cycles one and two is difference={diff}. This can help you understand the variations between the billing cycles. This user belongs to the location:{loc}"
-            initial_response = chatbot_response(session_id, first_query)
-            st.session_state.messages.append({"role": "assistant", "content": initial_response})
-
-        displayed_initial_message = False
-        for message in st.session_state.messages:
-            if message["role"] == "assistant":
-                avatar_url = assistant_avatar_user
+    if access_token:
+        if flag:
+            uuid = st.text_input("Enter the UUID to fetch the data:")
+            if uuid:
+                processed_data = load_json_data(env,access_token,uuid)
             else:
-                avatar_url = None
+                st.info("Please enter a UUID to fetch data.")
+                return
+        else:
+            processed_data = load_json_data()
 
-            with st.chat_message(message["role"], avatar=avatar_url):
-                st.markdown(message["content"])
+        if processed_data is None:
+            return
 
-            if initial_response is not None and message["content"] == initial_response:
-                displayed_initial_message = True
+        json_file = processed_data.get("usageChartDataList", [])
+        json_file = json_file[-15:-2] #Fetching last 13 BCs excluding the 2 recent ones
+        loc = processed_data["location"]
 
-        if not displayed_initial_message and initial_response is not None:
-            with st.chat_message("assistant", avatar=assistant_avatar_user):
-                st.markdown(initial_response.replace("$", r"\$"))
+        st.markdown("<h3 style='text-align: center;'>Billing Cycles Summary</h1>", unsafe_allow_html=True)
+        table = display_billing_cycles(json_file)
+        st.text(table)
 
-        if prompt := st.chat_input("You:"):
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt.replace("$", "\$"))
+        cycle1, cycle2, idx1, idx2, show_plot = select_billing_cycles(json_file)
+        if not cycle1 or not cycle2 or show_plot is None:
+            return
 
-            response = chatbot_response(session_id, prompt)
-            with st.chat_message("assistant", avatar=assistant_avatar_user):
-                st.markdown(response.replace("$", r"\$"))
-            st.session_state.messages.append({"role": "assistant", "content": response})
+        if show_plot == 'yes':
+            image_buffer = plot_itemization_comparison(json_file[idx1], json_file[idx2])
+            image = Image.open(image_buffer)
+            st.image(image, caption='\n\n', use_column_width=True)
 
-    interactive_chatbot(session_id, cycle1, cycle2, diff)
+        diff = replace_braces(calculate_difference(json_file[idx1], json_file[idx2]))
+        st.write('\nBill Analyzer is running! Please Wait...\n')
+
+        st.session_state['session_id'] = session_id
+        st.session_state['cycle1'] = cycle1
+        st.session_state['cycle2'] = cycle2
+        st.session_state['diff'] = diff
+        if 'store' not in st.session_state:
+            st.session_state['store'] = {}
+        store = st.session_state['store']
+
+        def get_session_history(session_id: str):
+            if session_id not in store:
+                store[session_id] = InMemoryChatMessageHistory()
+            return store[session_id]
+
+        llm = ChatOpenAI(model="gpt-4o", openai_api_key=key, temperature=1.0)  #Using gpt-4o as a base model
+        first_chain = first_prompt | llm
+        second_chain = second_prompt | llm
+
+        first_with_history = RunnableWithMessageHistory(first_chain, get_session_history)
+        second_with_history = RunnableWithMessageHistory(second_chain, get_session_history)
+
+        def chatbot_response(session_id: str, user_input: str):
+            history = get_session_history(session_id)
+            if not history.messages:
+                response = first_with_history.invoke(
+                    {"input": user_input},
+                    config={"configurable": {"session_id": session_id}}
+                )
+            else:
+                response = second_with_history.invoke(
+                    {"input": user_input},
+                    config={"configurable": {"session_id": session_id}}
+                )
+            return response.content
+
+        def interactive_chatbot(session_id: str, cycle1, cycle2, diff):
+            if "messages" not in st.session_state:
+                st.session_state.messages = []
+
+            initial_response = None
+
+            if not st.session_state.messages:
+                first_query = f"Compare the following billing cycles: one= {cycle1} and two= {cycle2}. The difference in values between the billing cycles one and two is difference={diff}. This can help you understand the variations between the billing cycles. This user belongs to the location:{loc}"
+                initial_response = chatbot_response(session_id, first_query)
+                st.session_state.messages.append({"role": "assistant", "content": initial_response})
+
+            displayed_initial_message = False
+            for message in st.session_state.messages:
+                if message["role"] == "assistant":
+                    avatar_url = assistant_avatar_user
+                else:
+                    avatar_url = None
+
+                with st.chat_message(message["role"], avatar=avatar_url):
+                    st.markdown(message["content"])
+
+                if initial_response is not None and message["content"] == initial_response:
+                    displayed_initial_message = True
+
+            if not displayed_initial_message and initial_response is not None:
+                with st.chat_message("assistant", avatar=assistant_avatar_user):
+                    st.markdown(initial_response.replace("$", r"\$"))
+
+            if prompt := st.chat_input("You:"):
+                st.session_state.messages.append({"role": "user", "content": prompt})
+                with st.chat_message("user"):
+                    st.markdown(prompt.replace("$", "\$"))
+
+                response = chatbot_response(session_id, prompt)
+                with st.chat_message("assistant", avatar=assistant_avatar_user):
+                    st.markdown(response.replace("$", r"\$"))
+                st.session_state.messages.append({"role": "assistant", "content": response})
+
+        interactive_chatbot(session_id, cycle1, cycle2, diff)
 
 if __name__ == "__main__":
 

@@ -3,8 +3,6 @@ from datetime import datetime
 import requests 
 import json
 
-access_token = "2509467f-40f1-45a7-8c4f-548bb6708b66" #Expires after 12 hours
-
 # Function to load JSON file
 def load_json_file(file_path):
     """
@@ -157,7 +155,7 @@ def transform_itemization_details(details):
             for detail in details if detail["category"]}
 
 #API call to fetch user's location
-def fetch_location(uuid):
+def fetch_location(uuid, env_url, access_token):
     """
     Fetches the user's location using an API call.
 
@@ -170,7 +168,7 @@ def fetch_location(uuid):
         dict or None: The dictionary containing the user's location data if the 
         request is successful, or None if an error occurs.
     """
-    api_url = f'https://naapi.bidgely.com/meta/users/{uuid}/homes/1?access_token={access_token}'
+    api_url = f'{env_url}/meta/users/{uuid}/homes/1?access_token={access_token}'
 
     try:
         # Make the request
@@ -191,7 +189,7 @@ def fetch_location(uuid):
 
     
 #API call to fetch user's consumption data
-def fetch_itemization_data(uuid):
+def fetch_itemization_data(uuid, env_url, access_token):
     """
     Fetches the user's consumption data using an API call.
 
@@ -204,7 +202,7 @@ def fetch_itemization_data(uuid):
         dict or None: The dictionary containing the user's consumption data if 
         the request is successful, or None if an error occurs.
     """
-    api_url = f'https://naapi.bidgely.com/v2.0/dashboard/users/{uuid}/usage-chart-details?measurement-type=ELECTRIC&mode=year&start=0&end=1885314000&date-format=DATE_TIME&locale=en_US&next-bill-cycle=false&show-at-granularity=false&skip-ongoing-cycle=false&access_token={access_token}'
+    api_url = f'{env_url}/v2.0/dashboard/users/{uuid}/usage-chart-details?measurement-type=ELECTRIC&mode=year&start=0&end=1885314000&date-format=DATE_TIME&locale=en_US&next-bill-cycle=false&show-at-granularity=false&skip-ongoing-cycle=false&access_token={access_token}'
     
     try:
         # Make the request
@@ -224,7 +222,7 @@ def fetch_itemization_data(uuid):
         return None
 
 #API call to fetch user's vacation data
-def fetch_vacation_data(uuid):
+def fetch_vacation_data(uuid, env_url, access_token):
     """
     Fetches the user's vacation data using an API call.
 
@@ -237,7 +235,7 @@ def fetch_vacation_data(uuid):
         dict or None: The dictionary containing the user's vacation data if 
         the request is successful, or None if an error occurs.
     """
-    api_url = f'https://naapi.bidgely.com/v3.0/internal/users/{uuid}/homes/1/ELECTRIC/vacation?from=0&to=1885314000&access_token={access_token}'
+    api_url = f'{env_url}/v3.0/internal/users/{uuid}/homes/1/ELECTRIC/vacation?from=0&to=1885314000&access_token={access_token}'
     
     try:
         # Make the request
